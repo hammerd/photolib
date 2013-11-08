@@ -60,12 +60,12 @@ def make_PAMcorr_image(image, outfile='default'):
             scihdr = hdulist[ff].header
             data = hdulist[ff].data
             chip = scihdr['CCDCHIP']
-            sizaxis1 = scihdr['SIZAXIS1']
-            sizaxis2 = scihdr['SIZAXIS2']
+            naxis1 = scihdr['NAXIS1']
+            naxis2 = scihdr['NAXIS2']
             x0 = np.abs(scihdr['LTV1'])
             y0 = np.abs(scihdr['LTV2'])
-            x1 = x0 + sizaxis1
-            y1 = y0 + sizaxis2
+            x1 = x0 + naxis1
+            y1 = y0 + naxis2
 
             # -- apply the PAM
             if detector == 'UVIS':
