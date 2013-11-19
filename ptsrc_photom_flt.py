@@ -246,12 +246,14 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
     SUBARRAY = prihdr['SUBARRAY']
     ccdamp = prihdr['CCDAMP']
 
-    if instrum == 'WFC3': filter = prihdr['FILTER']
+    if instrum == 'WFC3':
+        filter = prihdr['FILTER']
+        dp_zmag = get_wfc3_zeropoint(filter)
     elif instrum == 'ACS':
         filter = prihdr['FILTER1']
         if filter[0] == 'C': filter == prihdr['FILTER2']
+        dp_zmag = get_acs_zeropoint(prihdr)
     else: raise Exception('Instrument '+instrum+' not covered in our case list.')
-    dp_zmag = get_uvis_zeropoint(filter)
 
     # -- record native pixel scale and no. of chips
     if instrum == 'WFC3':
