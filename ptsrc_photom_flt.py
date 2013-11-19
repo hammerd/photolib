@@ -364,16 +364,12 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
 	# Run phot
 	iraf.phot.unlearn()         # reset daophot parameters to default values
 	iraf.phot(image=image+'[0]', interactive='no', verify='no', coords=coordfile, output=outfile, fwhmpsf=fwhmpsf, \
-      		sigma=backsigma, readnoise=rdnoise_corr, itime=exptime, calgorithm=calgorithm, cbox=cbox, skyvalue=backmean, \
-		apertures=apertures,zmag=dp_zmag, salgorithm='constant') 	#annulus=annulus, dannulus=dannulus
+                  sigma=backsigma, readnoise=rdnoise_corr, itime=exptime, calgorithm=calgorithm, cbox=cbox, \
+                  skyvalue=backmean,apertures=apertures,zmag=dp_zmag,salgorithm='constant') #annulus=annulus, dannulus=dannulus
 
 
-        # Display results of daophot
-        #iraf.display(tmp[0]+'.fits',1, zscale='no', zrange='no', z1=0, z2=100,ztrans='log')
-        #iraf.tvmark(1,outfile,mark = 'circle', radii = 10, color = 206)
+	return backval,backsigma    # return computed background stats for image
 
-	#return outfile 		# return name of output catalog
-	return backmean,backsigma	# return computed background stats for image
 
 
 def circular_mask(arr_shape, r, x_offset=0, y_offset=0):
