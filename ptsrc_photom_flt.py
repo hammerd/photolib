@@ -428,11 +428,11 @@ def circular_mask(arr_shape, r, x_offset=0, y_offset=0):
 
 def replace_filevalue(file, orgval, newval):
 
-	''' REPLACE UNWANTED VALUES IN EXTERNAL FILE '''
+    ''' REPLACE UNWANTED VALUES IN EXTERNAL FILE '''
 
-	for line in fileinput.input(file, inplace = 1):
-		print line.replace(str(orgval), str(newval)),
-	fileinput.close()
+    for line in fileinput.input(file, inplace = 1):
+        print line.replace(str(orgval), str(newval)),
+    fileinput.close()
 
 
 
