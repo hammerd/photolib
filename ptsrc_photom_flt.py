@@ -368,7 +368,7 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
 	iraf.phot.unlearn()         # reset daophot parameters to default values
 	iraf.phot(image=image+'['+str(sciext[0])+']', interactive='no', verify='no', coords=coordfile, output=outfile, \
 	          fwhmpsf=fwhmpsf, sigma=backsigma, readnoise=rdnoise_corr, itime=exptime, calgorithm=calgorithm, \
-	          cbox=cbox, skyvalue=backmean,apertures=apertures,zmag=dp_zmag,salgorithm='constant')
+	          cbox=cbox, skyvalue=backmean,apertures=apertures,zmag=zeropt,salgorithm='constant')
 	          #annulus=annulus, dannulus=dannulus
 
 
