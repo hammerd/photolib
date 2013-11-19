@@ -15,6 +15,8 @@ Sept. 2012: Original script (v0.1).
 Oct. 2012: Added more robust handling of images with single chip (e.g., IR, calibration).
 
 FUTURE IMPROVEMENTS:
+PAM-correction for ACS?
+
 
 USE:
 python EE_stepping_program.py
@@ -313,7 +315,7 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         maskim = hdulist[str(sciext[0])].data
         if detector == 'IR': maskrad = 30
         else: maskrad = 80
-        maskim[circular_mask(maskim.shape,maskrad, x_offset=(xc-naxis1/2.0),  y_offset=(yc-naxis2/2.0))] = -99999.0
+        maskim[circular_mask(maskim.shape, maskrad, x_offset=(xc-naxis1/2.0), y_offset=(yc-naxis2/2.0))] = -99999.0
 
         # -- Also mask out sources with zero effective exposure [WE ELIMINATE PIXELS WITHIN 20 OF IMAGE BORDER]
         maskim[:,0:20] = -99999.0
@@ -330,7 +332,7 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         ulim = init_median + 10.0*init_rms
 
         # -- measure background and rms
-        if backmethod.lowercase() == 'mean': back,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
+        if backmethod.lowercase() == 'mean': back,backrms=meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
         elif backmethod.lowercase() == 'median': back,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7,return_median=1)
         elif backmethod.lowercase() == 'mode':
             backmean,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
@@ -342,8 +344,8 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         if backval == None: backval = back
         if backsigma == None: backsigma == backrms
 
-	print ' BACKGROUND =  '+str(backval)
-	print ' BACKGROUND RMS =  '+str(backsigma)
+	print '\n BACKGROUND =  '+str(backval)
+	print ' BACKGROUND RMS =  '+str(backsigma)+' \n'
 
 
 	# Case of no aperture size given (we select aperture sizes of: WFC3= 0.27 and 0.4"  && ACS=0.25 and 0.5")
