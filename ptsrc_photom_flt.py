@@ -349,12 +349,12 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
 	print ' BACKGROUND RMS =  '+str(backsigma)+' \n'
 
 
-	# Case of no aperture size given (we select aperture sizes of: WFC3= 0.27 and 0.4"  && ACS=0.25 and 0.5")
-	if apertures == '0.0':
-            if instr == 'WFC3' and filter[1] == '1': apertures=str(0.27/opxscl)+','+str(0.4/opxscl)	# case of IR filters
-            elif instr == 'WFC3' and filter[1] != '1': apertures='5,'+str(0.4/opxscl)	# case of UVIS filters
-            elif instr == 'WFC': apertures = '5,16.66'
-            else: raise exception('UNKNOWN INSTRUMENT/FILTER')
+	# Case of no aperture size given (we select aperture sizes of UVIS=0.2/0.4", IR=0.27/0.4", ACS=0.25/0.5")
+	if apertures == '':
+            if instrum == 'WFC3' and detector == 'IR': apertures=str(0.27/pscale_img)+','+str(0.4/pscale_img)
+            elif instrum == 'WFC3' and detector == 'UVIS': apertures=str(0.2/pscale_img)+','+str(0.4/pscale_img)
+            elif instrum == 'ACS' and detector == 'WFC': apertures=str(0.25/pscale_img)+','+str(0.5/pscale_img)
+            else: raise exception('Instrument/Detector '+instrum+'/'+detector+' not covered in case list.')
 
 
 	# Remove old phot output files
@@ -363,9 +363,10 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
 
 	# Run phot
 	iraf.phot.unlearn()         # reset daophot parameters to default values
-	iraf.phot(image=image+'[0]', interactive='no', verify='no', coords=coordfile, output=outfile, fwhmpsf=fwhmpsf, \
-                  sigma=backsigma, readnoise=rdnoise_corr, itime=exptime, calgorithm=calgorithm, cbox=cbox, \
-                  skyvalue=backmean,apertures=apertures,zmag=dp_zmag,salgorithm='constant') #annulus=annulus, dannulus=dannulus
+	iraf.phot(image=image+'['+str(sciext[0])+']', interactive='no', verify='no', coords=coordfile, output=outfile, \
+	          fwhmpsf=fwhmpsf, sigma=backsigma, readnoise=rdnoise_corr, itime=exptime, calgorithm=calgorithm, \
+	          cbox=cbox, skyvalue=backmean,apertures=apertures,zmag=dp_zmag,salgorithm='constant')
+	          #annulus=annulus, dannulus=dannulus
 
 
 	return backval,backsigma    # return computed background stats for image
