@@ -765,23 +765,20 @@ if __name__=='__main__':
                                                 'm18':'%0.2f','m20':'%0.2f','m24':'%0.2f','m28':'%0.2f','m32':'%0.2f','m36':'%0.2f','m40':'%0.2f','m45':'%0.2f','m50':'%0.2f','m55':'%0.2f','m60':'%0.2f','m65':'%0.2f','m70':'%0.2f'})
 
 
-	# Make diagnostic plots to determine which find parameters do a good job of identifyign the standard star
-	fnarr = np.array(fnarr)
-	mjd_avg=np.array(mjdarr)
-	find_sharp = np.array(find_sharp)
-        find_round = np.array(find_round)
-        find_ground = np.array(find_ground)
+	# Make diagnostic plots to determine which daofind parameters do a good job of identifyign the standard star
+	#fnarr = np.array(fnarr)
+	#mjd_avg=np.array(mjdarr)
+	#find_sharp = np.array(find_sharp)
+        #find_round = np.array(find_round)
+        #find_ground = np.array(find_ground)
 
-        #badf = ['ibbs25fgq_flt.fits', 'ibbsr1qqq_flt.fits', 'ibuc51aeq_flt.fits', 'ibbsy4n1q_flt.fits']	# F814W bad
-	#badfind = np.where((fnarr == badf[0]) | (fnarr == badf[1]) | (fnarr == badf[2]) | (fnarr == badf[3]))[0]
-        pylab.figure()
-	pylab.scatter(mjd_avg,find_sharp)
-	#pylab.scatter(mjd_avg[badfind],find_sharp[badfind],color='r',marker='o',s=100)
-        pylab.figure()
-        pylab.scatter(mjd_avg,find_round)
-        #pylab.scatter(mjd_avg[badfind],find_round[badfind],color='r',marker='o',s=100)
-        pylab.figure()
-        pylab.scatter(mjd_avg,find_ground)
-        #pylab.scatter(mjd_avg[badfind],find_ground[badfind],color='r',marker='o',s=100)
+       
+        #pylab.figure()
+	#pylab.scatter(mjd_avg,find_sharp)
+	
+        #pylab.figure()
+        #pylab.scatter(mjd_avg,find_round)
 
-        pdb.set_trace()
+        #pylab.figure()
+        #pylab.scatter(mjd_avg,find_ground)
+ 
