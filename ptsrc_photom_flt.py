@@ -432,13 +432,22 @@ def replace_filevalue(file, orgval, newval):
 	fileinput.close()
 
 
-def get_uvis_zeropoint(filter):
-        ''' RETURN ZEROPOINT (infinite) for UVIS. Add other filters as needed. '''
 
-	zp = {'F225W':24.0403, 'F275W':24.1305, 'F336W':24.6682,'F390W': 25.3562, 'F438W':24.8206,'F475W':25.6799,'F555W':25.7906,'F606W':26.0691,'F814W':25.0985,'F850LP':23.8338}
-	
-	if zp.has_key(filter.upper()): return zp[filter.upper()]
-	else: raise Exception('Zeropoint is not specified for this filter: '+filter)
+def get_wfc3_zeropoint(filter):
+    # array of WFC3 AB zeropoints (not all here - add as needed)
+    zp = {'F225W':24.0403, 'F275W':24.1305, 'F336W':24.6682, 'F390W':25.3562, 'F438W':24.8206, 'F475W':25.6799, \
+          'F547M':24.7467, 'F555W':25.7906, 'F606W':26.0691, 'F656N':20.4827, 'F658N':21.0287, 'F814W':25.0985, \
+          'F850LP':23.8338,'F105W':26.2687, 'F125W':26.2303, 'F140W':26.4524, 'F160W':25.9463}
+
+    if zp.has_key(filter.upper()): return zp[filter.upper()]
+    else: raise Exception('Zeropoint is not specified for this filter: '+filter)
+
+
+def get_acs_zeropoint(hdr):
+    PHOTFLAM = hdr['PHOTFLAM']
+    PHOTPLAM = hdr['PHOTPLAM']
+    zeropt = -2.5*np.log10(PHOTFLAM) - 5.0*np.log10(PHOTPLAM) - 2.408  #AB
+    return zeropt
 
 
 def get_modelpsf_uvis(wave_eval, rad_eval=[-9999.0]):
@@ -607,9 +616,10 @@ def get_pivot_wavel(hdr):
 if __name__=='__main__':
         # Parse input parameters
         parser = argparse.ArgumentParser(description='Measure the EE from Abhi Stepping Program.')
-        parser.add_argument('-im', '--images',default='*flt.fits', type=str, help='Input fits file(s). \
-                                Default is all CR-cleaned science images in working directory.')
-	parser.add_argument('-back', '--background', default='mean', type=str, help='Method of background subtraction for photometry (default=mean).')
+        parser.add_argument('-im', '--images',default='*fl?.fits', type=str, help='Input fits file(s). \
+                              Default is all FLT science images in current working directory.')
+	parser.add_argument('-back', '--background', default='mean', type=str, choices=['mean','median','mode'], \
+	                     help='Method of background subtraction for photometry (default=mean).')
         options = parser.parse_args()
         backmeth=options.background
 
@@ -631,7 +641,7 @@ if __name__=='__main__':
 	find_ground = []
 	# Generate source catalogs: src detection & photometry within same image (i.e., not color catalogs)
         for file, ff in zip(file_list,xrange(len(file_list))):
-		mk_PAMcorr_image(file, outfile=cnts_name[ff])					
+		make_PAMcorr_image(file, outfile=cnts_name[ff])					
 		run_daofind(cnts_name[ff], outfile=find_name[ff], dthreshold=800.0)
                 replace_filevalue(find_name[ff], 'INDEF',0.0)   # all were associated with "sharp" parameter -- setting it to value that keeps the source within accepted boundary
 		xx,yy,mm,sharp,round,ground,id = np.loadtxt(find_name[ff],unpack=True)
