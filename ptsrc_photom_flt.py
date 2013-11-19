@@ -2,7 +2,8 @@
 
 '''
 ABOUT:
-This program performs point-source photometry using the IRAF tasks daofind and daoimage on a single HST image or a list of images.
+This program performs point-source photometry using the IRAF tasks daofind and daoimage
+on a single HST image or a list of images (handles flt,crclean,single_sci or drz).
 
 DEPENDS:
 Python 2.5.4
