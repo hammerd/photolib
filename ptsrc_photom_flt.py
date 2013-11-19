@@ -219,8 +219,8 @@ def run_daofind(image, outfile='default', dthreshold=3.0, fwhmpsf=2.5, backsigma
     file_query = os.access(outfile, os.R_OK)	
     if file_query == True: os.remove(outfile)
     iraf.daofind.unlearn()
-    iraf.daofind(image=image+'['+str(sciext[0])+']', interactive='no', verify='no',output=outfile, fwhmpsf=fwhmpsf, sigma=backsigma, \
-                 readnoise=rdnoise_corr, itime=exptime, threshold=dthreshold, datamin=-10, datamax=100000)
+    iraf.daofind(image=image+'['+str(sciext[0])+']', interactive='no', verify='no',output=outfile, fwhmpsf=fwhmpsf, \
+                 sigma=backsigma, readnoise=rdnoise_corr, itime=exptime, threshold=dthreshold, datamin=-10, datamax=100000)
 
 
     return outfile
@@ -350,10 +350,10 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
 
 	# Case of no aperture size given (we select aperture sizes of: WFC3= 0.27 and 0.4"  && ACS=0.25 and 0.5")
 	if apertures == '0.0':
-		if instr == 'WFC3' and filter[1] == '1': apertures=str(0.27/opxscl)+','+str(0.4/opxscl)	# case of IR filters
-		elif instr == 'WFC3' and filter[1] != '1': apertures='5,'+str(0.4/opxscl)	# case of UVIS filters
-		elif instr == 'WFC': apertures = '5,16.66'
-		else: raise exception('UNKNOWN INSTRUMENT/FILTER')
+            if instr == 'WFC3' and filter[1] == '1': apertures=str(0.27/opxscl)+','+str(0.4/opxscl)	# case of IR filters
+            elif instr == 'WFC3' and filter[1] != '1': apertures='5,'+str(0.4/opxscl)	# case of UVIS filters
+            elif instr == 'WFC': apertures = '5,16.66'
+            else: raise exception('UNKNOWN INSTRUMENT/FILTER')
 
 
 	# Remove old phot output files
