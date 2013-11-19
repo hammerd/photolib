@@ -246,13 +246,10 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
     SUBARRAY = prihdr['SUBARRAY']
     ccdamp = prihdr['CCDAMP']
 
-    if instrum == 'WFC3':
-        filter = prihdr['FILTER']
-        dp_zmag = get_wfc3_zeropoint(filter)
+    if instrum == 'WFC3': filter = prihdr['FILTER']
     elif instrum == 'ACS':
         filter = prihdr['FILTER1']
         if filter[0] == 'C': filter == prihdr['FILTER2']
-        dp_zmag = get_acs_zeropoint(prihdr)
     else: raise Exception('Instrument '+instrum+' not covered in our case list.')
 
     # -- record native pixel scale and no. of chips
@@ -298,6 +295,10 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         naxis2 = pyfits.getval(image,'NAXIS2',ext=0)
         sciext.append(0)
 
+    # -- get zeropoints
+    if instrum == 'WFC3': zeropt = get_wfc3_zeropoint(filter)
+    elif instrum == 'ACS' and imtype == 'drz': zeropt = get_acs_zeropoint(prihdr)
+    elif instrum == 'ACS' and imtype == 'flt': zeropt = get_acs_zeropoint(pyfits.getheader(image,ext=('SCI',1)))
 
     # -- estimate read noise
     if rdnoise == None:
