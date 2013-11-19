@@ -14,14 +14,7 @@ HISTORY:
 Sept. 2012: Original script (v0.1).
 Oct. 2012: Added more robust handling of images with single chip (e.g., IR, calibration).
 
-
 FUTURE IMPROVEMENTS:
--Add ds9 & tvmark command to inspect sources detections from daofind.
--Add automated procedure to measure the PSF.
--Add procedure to annotate graphs usign current plot limits, instead of hard-wired plot positions.
--Possibly change method of source detection. Should probably be performed on e-/sec
- images, not e-, and weight detections using rms map.
-
 
 USE:
 python EE_stepping_program.py
@@ -42,7 +35,8 @@ from astropy.io import ascii
 from stwcs.wcsutil import HSTWCS
 
 
-def mk_PAMcorr_image(image, outfile='default'):
+
+def make_PAMcorr_image(image, outfile='default'):
     pamdir = '/Users/hammer/Research/STScI/WFC3_TEAM/photometry/Monitoring/'
 
     # -- Parse output filename & save a copy to file
@@ -89,6 +83,66 @@ def mk_PAMcorr_image(image, outfile='default'):
     return outfile
 
 
+
+def make_counts_image(image, outfile='default'):
+    '''FUNCTION TO CONVERT CNTS/SEC IMAGE TO COUNTS (IF NECESSARY)'''
+
+    # -- parse output filename & save a copy to file (NOTE: if outfile == input image, data is overwritten).
+    if (image != outfile):
+        if outfile == 'default': outfile = image.split('.fits')[0] + '_cnts.fits'
+        shutil.copy(image,outfile)
+    else: print 'OVERWRITING DATA FOR IMAGE: '+image+'.'
+
+
+    # -- determine if image is flt/flc, crclean, or drz/drc
+    prihdr = pyfits.getheader(outfile,ext=0)
+    pscale = prihdr.get('D001SCAL',default='NA')
+    if pscale != 'NA': imtype = 'drz'
+    elif len(image.split('crclean.fits')) > 1: imtype = 'crclean'
+    else: imtype = 'flt'
+
+
+    # -- initialize a few required parameters
+    detector = prihdr['DETECTOR']
+    exptime = prihdr['EXPTIME']
+
+
+    # -- multiply by exposure time (only if image is already in cnts/sec)
+    #      [notes] -- IR crcleans are actually in cnts, but "BUNIT" still says per second (can't trust bunit for now).
+    #              -- We assume drz are cnts/sec, but this does not have to be true.
+    #
+    if imtype == 'drz':
+        # -- save background & pixel scale info
+        if prihdr['extend'] == True: back = pyfits.getval(outfile,'MDRIZSKY',ext=1)  
+        else: back = pyfits.getval(outfile,'MDRIZSKY',ext=0)
+        pscale_nat = pyfits.getval(outfile,'D001ISCL',ext=0)
+        pscale_img = pyfits.getval(outfile,'D001SCAL',ext=0)
+
+        # -- assign the number of chips associated with this image
+        if (prihdr['detector'] == 'IR'): nchips = 1.0                                          # IR
+        elif (prihdr['subarray'] == True) and (len(prihdr['CCDAMP']) == 1): nchips = 1.0      # UVIS sub-array
+        elif (prihdr['detector'] == 'UVIS') and (prihdr['subarray'] == False): nchips = 2.0   # UVIS full-frame
+        else: raise exception('Image type is not defined.')
+
+        # -- add background and correct for different pixel scale (original backgrd is measured in raw images)
+        fdata = pyfits.getdata(outfile,ext=0)
+        fdata_cnts = np.copy(fdata) * exptime + np.sum(back)/nchips * (pscale_img/pscale_nat)**2
+        hdulist = pyfits.open(outfile,mode='update')
+        hdulist[0].data = fdata_cnts
+        hdulist.close()
+
+    elif ((detector == 'IR') & (imtype == 'flt')):
+        hdulist = pyfits.open(outfile,mode='update')
+        for ff in xrange(len(hdulist)):
+            if hdulist[ff].name == 'SCI': hdulist[ff].data = hdulist[ff].data * exptime
+        hdulist.close()
+
+    else: print 'IMAGE SHOULD ALREADY BE IN UNITS OF COUNTS. RETURNING...'
+
+    return outfile
+
+
+
 def run_daofind(image, outfile='default', dthreshold=3.0, fwhmpsf=2.5, backsigma=None,rdnoise=None):
     '''RUN DAOFIND ON INPUT IMAGE'''
 
@@ -99,44 +153,50 @@ def run_daofind(image, outfile='default', dthreshold=3.0, fwhmpsf=2.5, backsigma
     # -- extract header info 
     prihdr = pyfits.getheader(image)
     exptime = prihdr['exptime']
-    instr = prihdr['INSTRUME']
+    instrum = prihdr['INSTRUME']
     detector = prihdr['DETECTOR']
-    subarray = prihdr['SUBARRAY']
+    SUBARRAY = prihdr['SUBARRAY']
     ccdamp = prihdr['CCDAMP']
 
 
-    # -- assign number of chips
-    if detector == 'IR': nchips = 1.0
-    elif ((subarray == True) & (len(ccdamp) == 1)): nchips = 1.0
-    elif subarray == False: nchips = 2.0
-    else: raise exception('Image type is not defined. Must add special case.')
-
-
-    # -- record filter name & native pixel scale
+    # -- record filter name, native pixel scale, and no. of chips
     if instrum == 'WFC3':
-        filter = prihdr['FILTER']
-        if detector == 'UVIS': pscale_nat = 0.03962
-        elif detector == 'IR': pscale_nat = 0.12825
+        if detector == 'UVIS':
+            pscale_nat = 0.03962
+            if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
+            elif SUBARRAY == False: nchips = 2.0
+            else: raise Exception('Image type is not defined.')
+        elif detector == 'IR':
+            pscale_nat = 0.12825
+            nchips = 1.0
         else: raise Exception('Detector '+detector+' not covered in our case list.')
     elif instrum == 'ACS':
-        filter = prihdr['FILTER1']
-        if filter[0] == 'C': filter == prihdr['FILTER2']
-        if detector == 'WFC': pscale_nat = 0.049
+        if detector == 'WFC':
+            pscale_nat = 0.049
+            if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
+            elif SUBARRAY == False: nchips = 2.0
+            else: raise Exception('Image type is not defined.')
         else: raise Exception('Detector '+detector+' not covered in our case list.')
-    else: raise Exception('Instrument '+instr+' not covered in our case list.')
+    else: raise Exception('Instrument '+instrum+' not covered in our case list.')
 
 
-    # -- record pixel scale of current image (i.e., check if it's a drizzled image)
+    # -- record pixel scale of current image, image type, and number of flts
+    sciext = []
     pscale_img = prihdr.get('D001SCAL',default='NA')
-    if pixscale == 'NA':
+    if pscale_img == 'NA':
+        imtype = 'flt'            # we dont distinguish between flt/crclean, i.e., assume pscales are equal
         pscale_img = pscale_nat
-        imtype = 'flt'
-    else: imtype ='drz'
-
-
-    # -- assign number of flts (note: NDRIZIM keyword counts both chips from single FLT)
-    if imtype == 'drz': num_flts = prihdr['NDRIZIM']/nchips
-    else: num_flts = 1.0
+        num_flts = 1.0
+        # -- record location of science extension
+        hdulist = pyfits.open(image)
+        for ext in xrange(len(hdulist)):
+            if hdulist[ext].name == 'SCI': sciext.append(ext)
+        hdulist.close()
+        if len(sciext) != 1: raise Exception('We do not handle images with '+str(len(sciext))+' SCI extensions.')
+    else:
+        imtype ='drz'
+        num_flts = prihdr['NDRIZIM']/nchips
+        sciext.append(0)
 
 
     # -- estimate read noise
@@ -148,116 +208,143 @@ def run_daofind(image, outfile='default', dthreshold=3.0, fwhmpsf=2.5, backsigma
 
     # -- perform background noise calculation
     if backsigma == None:
-        backstats=iraf.imstatistics(image+'[0]', fields='stddev', lower = -100, upper = 100, nclip=5, \
+        backstats=iraf.imstatistics(image+'[1]', fields='stddev', lower = -100, upper = 100, nclip=5, \
                                     lsigma=3.0, usigma=3.0, cache='yes', format='no',Stdout=1)
         backsigma=float(backstats[0])
 
 
-    # remove old daofind files
+    # -- remove old daofind files/run daofind
     file_query = os.access(outfile, os.R_OK)	
     if file_query == True: os.remove(outfile)
     iraf.daofind.unlearn()
-    iraf.daofind(image=image+'[0]', interactive='no', verify='no',output=outfile, fwhmpsf=fwhmpsf, sigma=backsigma, \
-    readnoise=rdnoise_corr, itime=exptime, threshold=dthreshold, datamin=-10, datamax=100000)
+    iraf.daofind(image=image+'['+str(sciext[0])+']', interactive='no', verify='no',output=outfile, fwhmpsf=fwhmpsf, sigma=backsigma, \
+                 readnoise=rdnoise_corr, itime=exptime, threshold=dthreshold, datamin=-10, datamax=100000)
 
 
-    return outfile		# return name of coordinate file
+    return outfile
 
 
 
-def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean',apertures='1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,24,28,32,36,40,45,50,55,60,65,70', cbox=3.0, \
-		backmean=-9999.0,annulus=17.0, dannulus=3.0, calgorithm='centroid', salgorithm='median', fwhmpsf=2.5, backsigma=-1.0,rdnoise=-1.0, epadu=1.0):
+def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', backval=None, backsigma=None,rdnoise=None,\
+                apertures='1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,24,28,32,36,40,45,50,55,60,65,70', cbox=3.0, \
+	        annulus=17.0, dannulus=3.0, calgorithm='centroid', salgorithm='median', fwhmpsf=2.5, epadu=1.0):
 
-	'''THIS PROCEDURE RUNS DAOPHOT ON INPUT IMAGE'''
+    '''THIS PROCEDURE RUNS DAOPHOT ON INPUT IMAGE'''
 
-	# Parse input parameters
-	if outfile == 'default': outfile = image + '0.mag.1'
-	if coordfile == 'NA': coordfile = image + '0.coo.1'
+    # Parse input parameters
+    if outfile == 'default': outfile = image + '0.mag'
+    if coordfile == 'NA': coordfile = image + '0.coo'
 
-	# Read in fits header
-	f = pyfits.open(image)
-	fheader = f[0].header
+    # -- extract header info
+    prihdr = pyfits.getheader(image)
+    exptime = prihdr['exptime']
+    instrum = prihdr['INSTRUME']
+    detector = prihdr['DETECTOR']
+    SUBARRAY = prihdr['SUBARRAY']
+    ccdamp = prihdr['CCDAMP']
 
-	# Extract relevant info from the header
-        naxis1 = fheader['NAXIS1']
-        naxis2 = fheader['NAXIS2']
-	exptime = fheader['exptime']
-        instr = fheader['INSTRUME']
-        if instr == 'WFC3':
-                filter = fheader['FILTER']
-        else: #assuming ACS
-                filter = fheader['FILTER1']
-                if filter[0] == 'C': filter == fheader['FILTER2']
-	ipxscl = 0.03962
-	opxscl = 0.03962
-	f.close()
-	dp_zmag = get_uvis_zeropoint(filter)
+    if instrum == 'WFC3': filter = prihdr['FILTER']
+    elif instrum == 'ACS':
+        filter = prihdr['FILTER1']
+        if filter[0] == 'C': filter == prihdr['FILTER2']
+    else: raise Exception('Instrument '+instrum+' not covered in our case list.')
+    dp_zmag = get_uvis_zeropoint(filter)
 
-
-        # Number of flt images (tricky: IR/calibration images may have only 1 chip--NDRIZIM keyword adds both chips)
-        if (fheader['detector'] == 'IR'): nchips = 1.0                                          # IR
-        elif (fheader['subarray'] == True) and (len(fheader['CCDAMP']) == 1): nchips = 1.0        # UVIS sub-array
-        elif (fheader['detector'] == 'UVIS') and (fheader['subarray'] == False): nchips = 2.0   # UVIS full-frame
-        else: raise exception('Image type is not defined.')
-        #num_flts = fheader['NDRIZIM']/nchips
-	num_flts = 1.0
-
-        # Perform read noise correction
-        if rdnoise < 0.0:
-                amps = fheader['CCDAMP']
-                rdnoise = np.zeros(len(amps))
-                for namp in xrange(len(amps)): rdnoise[namp] = fheader['READNSE'+amps[namp]]
-        rdnoise_corr = np.sqrt(num_flts * (np.average(rdnoise) * opxscl/ipxscl)**2)
-
-
-        # Measure the background and noise
-        if (backmean < -1000.0) or (backsigma < 0.0):
-                # read in the x/y center of the source
-                xc, yc = np.loadtxt(coordfile, unpack=True, usecols = (0,1))
-
-                #create temporary image for bckgrd measurement that masks sources out to 80 pixels (assign a very low number)
-                tmp_image = image+'.back.fits'
-                shutil.copy(image, tmp_image)
-                ff=pyfits.open(tmp_image, mode='update')
-                maskim = ff[0].data
-                maskim[circular_mask(maskim.shape,80, x_offset=(xc-naxis1/2.0),  y_offset=(yc-naxis2/2.0))] = -99999.0
-
-		# Also mask out sources with zero effective exposure [WE ELIMINATE PIXELS WITHIN 20 OF IMAGE BORDER]
-		maskim[:,0:20] = -99999.0
-		maskim[:,-20:] = -99999.0
-		maskim[0:20,:] = -99999.0
-		maskim[-20:,:] = -99999.0
-                ff.close()
-
-		# generate initial guess for lower/upper limits (use 10 sigma)
-		if (backmean < -1000.0) | (backsigma < 0.0):
-			initback = iraf.imstatistics(tmp_image+'[0]', fields='mode,stddev', lower = -100, upper = 10000, nclip=7, \
-                                                     lsigma=3.0, usigma=3.0, cache='yes', format='no',Stdout=1)
-
-			if len(initback[0].split('  ')) != 2:
-				raise Exception('Could not parse output from imstatistics.')
-			else:
-		    		llim = float(initback[0].split('  ')[0]) - 10.0*float(initback[0].split('  ')[1])
-		    		ulim = float(initback[0].split('  ')[0]) + 10.0*float(initback[0].split('  ')[1])
-
-		# measure mode and std deviation of background using initial guess to constrain dynamic range
-                if backmean < -1000.0:
-                        backstats=iraf.imstatistics(tmp_image+'[0]', fields=backmethod, lower = llim, upper = ulim, nclip=7, \
-                                                    lsigma=3.0, usigma=3.0, cache='yes', format='no',Stdout=1)
-                        backmean=float(backstats[0])
-
-                if backsigma < 0.0:
-                        backstats=iraf.imstatistics(tmp_image+'[0]', fields='stddev', lower = llim, upper = ulim, nclip=7, \
-                                                    lsigma=3.0, usigma=3.0, cache='yes', format='no',Stdout=1)
-                        backsigma=float(backstats[0])
+    # -- record native pixel scale and no. of chips
+    if instrum == 'WFC3':
+        if detector == 'UVIS':
+            pscale_nat = 0.03962
+            if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
+            elif SUBARRAY == False: nchips = 2.0
+            else: raise Exception('Image type is not defined.')
+        elif detector == 'IR':
+            pscale_nat = 0.12825
+            nchips = 1.0
+        else: raise Exception('WFC3 Detector '+detector+' not covered in our case list.')
+    elif instrum == 'ACS':
+        if detector == 'WFC':
+            pscale_nat = 0.049
+            if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
+            elif SUBARRAY == False: nchips = 2.0
+            else: raise Exception('Image type is not defined.')
+        else: raise Exception('ACS Detector '+detector+' not covered in our case list.')
+    else: raise Exception('Instrument '+instr+' not covered in our case list.')
 
 
-                #remove temporary image
-                #os.remove(tmp_image)
+    # -- record pixel scale of current image, image type, image axis lengths, and number of flts
+    sciext = []
+    pscale_img = prihdr.get('D001SCAL',default='NA')
+    if pscale_img == 'NA':
+        imtype = 'flt'            # we dont distinguish between flt/crclean, i.e., assume pscales are equal
+        pscale_img = pscale_nat
+        num_flts = 1.0
+        naxis1 = pyfits.getval(image,'NAXIS1',ext=('SCI',1))
+        naxis2 = pyfits.getval(image,'NAXIS2',ext=('SCI',1))
+        # -- record location of science extension
+        hdulist = pyfits.open(image)
+        for ext in xrange(len(hdulist)):
+            if hdulist[ext].name == 'SCI': sciext.append(ext)
+        hdulist.close()
+        if len(sciext) != 1: raise Exception('We do not handle images with '+str(len(sciext))+' SCI extensions.')
+    else:
+        imtype ='drz'
+        num_flts = prihdr['NDRIZIM']/nchips
+        naxis1 = pyfits.getval(image,'NAXIS1',ext=0)
+        naxis2 = pyfits.getval(image,'NAXIS2',ext=0)
+        sciext.append(0)
 
 
-	print ' BACKGROUND =  '+str(backmean)
+    # -- estimate read noise
+    if rdnoise == None:
+        rdnoise = np.zeros(len(ccdamp))
+        for namp in xrange(len(ccdamp)): rdnoise[namp] = prihdr['READNSE'+ccdamp[namp]]
+    rdnoise_corr = np.sqrt(num_flts * (np.average(rdnoise) * pixscale_img/pixscale_nat)**2)
+
+
+    # -- measure the background and noise
+    if ((backval == None) | (backsigma == None)):
+        # -- read in the x/y center of the source
+        xc,yc = np.loadtxt(coordfile, unpack=True, usecols = (0,1))
+
+        # -- create temporary image for bckgrd measurement that masks sources out to 80 pixels (assign a very low number)
+        tmp_image = image+'.back.fits'
+        shutil.copy(image, tmp_image)
+        hdulist = pyfits.open(tmp_image, mode='update')
+        maskim = hdulist[str(sciext[0])].data
+        if detector == 'IR': maskrad = 30
+        else: maskrad = 80
+        maskim[circular_mask(maskim.shape,maskrad, x_offset=(xc-naxis1/2.0),  y_offset=(yc-naxis2/2.0))] = -99999.0
+
+        # -- Also mask out sources with zero effective exposure [WE ELIMINATE PIXELS WITHIN 20 OF IMAGE BORDER]
+        maskim[:,0:20] = -99999.0
+        maskim[:,-20:] = -99999.0
+        maskim[0:20,:] = -99999.0
+        maskim[-20:,:] = -99999.0
+
+        # -- generate initial guess for lower/upper limits (use 10 sigma)
+        fmaskim = np.ndarray.flatten(maskim)
+        llim = -100
+        ulim = 10000.0
+        init_median,init_rms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7,return_median=1)
+        llim = init_median - 10.0*init_rms
+        ulim = init_median + 10.0*init_rms
+
+        # -- measure background and rms
+        if backmethod.lowercase() == 'mean': back,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
+        elif backmethod.lowercase() == 'median': back,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7,return_median=1)
+        elif backmethod.lowercase() == 'mode':
+            backmean,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
+            nbins = np.ceil(80.0/(0.1*backrms))
+            cc,bb,pp = pylab.hist(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],log=True,bins=nbins,range=(-40.0,40.0))
+            back = bb[cc.argmax()] + (bb.max()-bb.min())/(2.0*(len(bb)-1))
+        else: raise Exception('Background statistical method '+backmethod+' is not covered in our case list.')
+
+        if backval == None: backval = back
+        if backsigma == None: backsigma == backrms
+
+	print ' BACKGROUND =  '+str(backval)
 	print ' BACKGROUND RMS =  '+str(backsigma)
+
 
 	# Case of no aperture size given (we select aperture sizes of: WFC3= 0.27 and 0.4"  && ACS=0.25 and 0.5")
 	if apertures == '0.0':
@@ -533,8 +620,8 @@ if __name__=='__main__':
 		tmp=file.split('.fits')
 		cnts_name.append(tmp[0] + '_cnts.fits')
 
-        find_name = [cnts_name[x]+'0.coo.1' for x in xrange(len(cnts_name))]
-        phot_name = [cnts_name[x]+'0.mag.1' for x in xrange(len(cnts_name))]
+        find_name = [cnts_name[x]+'0.coo' for x in xrange(len(cnts_name))]
+        phot_name = [cnts_name[x]+'0.mag' for x in xrange(len(cnts_name))]
 
 
 	# Initialize a dictionary (structure) to hold date for each image
