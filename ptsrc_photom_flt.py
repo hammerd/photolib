@@ -209,9 +209,9 @@ def run_daofind(image, outfile='default', dthreshold=3.0, fwhmpsf=2.5, backsigma
     rdnoise_corr = np.sqrt(num_flts * (np.average(rdnoise) * pixscale_img/pixscale_nat)**2)
 
 
-    # -- perform background noise calculation
+    # -- perform rough background noise calculation
     if backsigma == None:
-        backstats=iraf.imstatistics(image+'[1]', fields='stddev', lower = -100, upper = 100, nclip=5, \
+        backstats=iraf.imstatistics(image+'['+str(sciext[0])+']', fields='stddev', lower = -100, upper = 100, nclip=5, \
                                     lsigma=3.0, usigma=3.0, cache='yes', format='no',Stdout=1)
         backsigma=float(backstats[0])
 
