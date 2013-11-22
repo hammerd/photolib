@@ -79,7 +79,7 @@ def mk_counts_image(image, wht_image='NA', outfile='default'):
 		else: raise Exception('Case not handled.')
 	elif fheader['detector'] == 'IR':
                         dam=pyfits.getdata('/Users/hammer/Research/STScI/WFC3_TEAM/photometry/Monitoring/ir_wfc3_map.fits')
-                        fdata_cnts = fdata * dam[y0:y1,x0:x1]
+                        fdata_cnts = fdata * dam[y0:y1,x0:x1] * exptime
 
 	# Save cnts image to disk
 	file_query = os.access(outfile, os.R_OK)
