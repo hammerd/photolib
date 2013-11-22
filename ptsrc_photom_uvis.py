@@ -47,7 +47,7 @@ def mk_counts_image(image, wht_image='NA', outfile='default'):
 	# Parse input parameters
 	if outfile == 'default':
 		osplit=image.split('.fits')
-		outfile=osplit[0]+'_cts.fits'
+		outfile=osplit[0]+'_cnts.fits'
 
 	# Read in fits image and header (ASSUME A FLT/FLC FILE)
 	f = pyfits.open(image)
