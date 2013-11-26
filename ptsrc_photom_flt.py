@@ -304,7 +304,7 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
     if rdnoise == None:
         rdnoise = np.zeros(len(ccdamp))
         for namp in xrange(len(ccdamp)): rdnoise[namp] = prihdr['READNSE'+ccdamp[namp]]
-    rdnoise_corr = np.sqrt(num_flts * (np.average(rdnoise) * pixscale_img/pixscale_nat)**2)
+    rdnoise_corr = np.sqrt(num_flts * (np.average(rdnoise) * pscale_img/pscale_nat)**2)
 
 
     # -- measure the background and noise
