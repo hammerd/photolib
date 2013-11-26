@@ -346,7 +346,7 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         else: raise Exception('Background statistical method '+backmethod+' is not covered in our case list.')
 
         if backval == None: backval = back
-        if backsigma == None: backsigma == backrms
+        if backsigma == None: backsigma = backrms
 
 	print '\n BACKGROUND =  '+str(backval)
 	print ' BACKGROUND RMS =  '+str(backsigma)+' \n'
