@@ -316,7 +316,7 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         tmp_image = image+'.back.fits'
         shutil.copy(image, tmp_image)
         hdulist = pyfits.open(tmp_image, mode='update')
-        maskim = hdulist[str(sciext[0])].data
+        maskim = hdulist[sciext[0]].data
         if detector == 'IR': maskrad = 30
         else: maskrad = 80
         maskim[circular_mask(maskim.shape, maskrad, x_offset=(xc-naxis1/2.0), y_offset=(yc-naxis2/2.0))] = -99999.0
