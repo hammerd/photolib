@@ -336,9 +336,9 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         ulim = init_median + 10.0*init_rms
 
         # -- measure background and rms
-        if backmethod.lowercase() == 'mean': back,backrms=meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
-        elif backmethod.lowercase() == 'median': back,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7,return_median=1)
-        elif backmethod.lowercase() == 'mode':
+        if backmethod.lower() == 'mean': back,backrms=meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
+        elif backmethod.lower() == 'median': back,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7,return_median=1)
+        elif backmethod.lower() == 'mode':
             backmean,backrms = meanclip(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],maxiter=7)
             nbins = np.ceil(80.0/(0.1*backrms))
             cc,bb,pp = pylab.hist(fmaskim[(fmaskim > llim) & (fmaskim < ulim)],log=True,bins=nbins,range=(-40.0,40.0))
