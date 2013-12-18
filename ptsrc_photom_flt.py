@@ -741,10 +741,11 @@ if __name__=='__main__':
 
 
 		data[ff] = {'filename':file, 'amp':amps,'shutter':shut,'mjd_avg':mjd_avg, 'mjd_deltat': mjd_deltat, \
-				'chip': chip, 'axis1':sizaxis1, 'axis2':sizaxis2, 'xc':xc, 'yc':yc,'xcp':xcp, 'ycp':ycp, \
-				'background': back, 'background_rms':backrms, 'exptime': expt, 'biaslevel': biaslev, 'dqflag':bitor, \
-				'flux':[f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23,f24,f25,f26], \
-				'mag':[m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17,m18,m19,m20,m21,m22,m23,m24,m25,m26]}
+			    'chip': chip, 'axis1':sizaxis1, 'axis2':sizaxis2, 'xc':xc, 'yc':yc,'xcp':xcp, 'ycp':ycp, \
+                            'background': back, 'background_rms':backrms, 'exptime': expt, 'biaslevel': biaslev, \
+                            'dqflag':bitor, \
+                            'flux':[f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23,f24,f25,f26], \
+                            'mag':[m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17,m18,m19,m20,m21,m22,m23,m24,m25,m26]}
 
 
 		# save image of source with measured barycenter on top
