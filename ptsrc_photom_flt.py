@@ -604,14 +604,15 @@ def get_pivot_wavel(hdr):
 	#--get instrument/filter information
 	instrum = hdr['INSTRUME']
 
-	if hdr['INSTRUME'] == 'WFC3': filter = hdr['FILTER']
-	else: #assuming ACS
-        	filter = fheader['FILTER1']
-                if filter[0] == 'C': filter == hdr['FILTER2']
+	if instrum == 'WFC3': filter = hdr['FILTER']
+	elif instrum == 'ACS':
+            filter = fheader['FILTER1']
+            if filter[0] == 'C': filter == hdr['FILTER2']
+        else: raise Exception('Instrument '+instrum+' not covered in our case list.')
 
 	#--return pivot wavelength (if available)
 	if pivot.has_key(instrum) and pivot[instrum].has_key(filter): return pivot[instrum][filter]
-	else:	return -9999.0
+	else: return -9999.0
 		#raise exception('Instrument and/or filter not currently supported (manually add to pivot list).'
 		#return -9999.0
 
