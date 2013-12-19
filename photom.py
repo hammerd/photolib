@@ -59,7 +59,7 @@ def make_PAMcorr_image(image, outfile='default'):
             # -- read in header and data info
             scihdr = hdulist[ff].header
             data = hdulist[ff].data
-            chip = scihdr['CCDCHIP']
+            chip = scihdr.get('CCDCHIP',default=1)
             sizaxis1 = scihdr['NAXIS1']
             sizaxis2 = scihdr['NAXIS2']
             x0 = np.abs(scihdr['LTV1'])
