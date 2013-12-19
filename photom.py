@@ -162,19 +162,16 @@ def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise
     if instrum == 'WFC3':
         if detector == 'UVIS':
             pscale_nat = 0.03962
-            fwhmpsf = 0.074/pscale_nat
             if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
             elif SUBARRAY == False: nchips = 2.0
             else: raise Exception('Image type is not defined.')
         elif detector == 'IR':
             pscale_nat = 0.12825
             nchips = 1.0
-            fwhmpsf = 0.15/pscale_nat
         else: raise Exception('Detector '+detector+' not covered in our case list.')
     elif instrum == 'ACS':
         if detector == 'WFC':
             pscale_nat = 0.049
-            fwhmpsf = 0.1/pscale_nat
             if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
             elif SUBARRAY == False: nchips = 2.0
             else: raise Exception('Image type is not defined.')
@@ -200,6 +197,11 @@ def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise
         num_flts = prihdr['NDRIZIM']/nchips
         sciext.append(0)
 
+    # -- set the fwhm in pixels
+    if detector == 'UVIS':  fwhmpsf = 0.074/pscale_img
+    elif detector == 'IR':  fwhmpsf = 0.150/pscale_img
+    elif detector == 'WFC': fwhmpsf = 0.100/pscale_img
+    else: raise Exception('Detector '+detector+' not covered in our case list.')
 
     # -- estimate read noise
     if rdnoise == None:
