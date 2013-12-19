@@ -230,8 +230,8 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
     '''THIS PROCEDURE RUNS DAOPHOT ON INPUT IMAGE'''
 
     # Parse input parameters
-    if outfile == 'default': outfile = image + '0.mag'
-    if coordfile == 'NA': coordfile = image + '0.coo'
+    if outfile == 'default': outfile = image + '.mag'
+    if coordfile == 'NA': coordfile = image + '.coo'
 
     # -- extract header info
     prihdr = pyfits.getheader(image)
