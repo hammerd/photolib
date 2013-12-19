@@ -362,6 +362,14 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
 
         print '\n BACKGROUND =  '+str(backval)
         print ' BACKGROUND RMS =  '+str(backsigma)+' \n'
+        
+    elif salgorithm != 'constant':
+        if backval == None: backval = 0.0
+        if backsigma == None: backsigma = 0.0
+        
+    else: raise Exception('Calling sequence, salgorithm = '+salgortihm+', backval='+str(backval)+\
+                          ', backsigma='+str(backsigma)+' is not covered in our case list.')
+
 
     # Case of no aperture size given (we select aperture sizes of UVIS=0.2/0.4", IR=0.27/0.4", ACS=0.25/0.5")
     if apertures == '':
