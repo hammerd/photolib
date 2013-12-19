@@ -148,7 +148,6 @@ def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise
     # -- parse output filename
     if outfile == 'default': outfile = image+'.coo'
 
-
     # -- extract header info 
     prihdr = pyfits.getheader(image)
     exptime = prihdr['exptime']
@@ -156,7 +155,6 @@ def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise
     detector = prihdr['DETECTOR']
     SUBARRAY = prihdr['SUBARRAY']
     ccdamp = prihdr['CCDAMP']
-
 
     # -- record filter name, native pixel scale, and no. of chips
     if instrum == 'WFC3':
@@ -177,7 +175,6 @@ def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise
             else: raise Exception('Image type is not defined.')
         else: raise Exception('Detector '+detector+' not covered in our case list.')
     else: raise Exception('Instrument '+instrum+' not covered in our case list.')
-
 
     # -- record pixel scale of current image, image type, and number of flts
     sciext = []
@@ -209,13 +206,11 @@ def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise
         for namp in xrange(len(ccdamp)): rdnoise[namp] = prihdr['READNSE'+ccdamp[namp]]
     rdnoise_corr = np.sqrt(num_flts * (np.average(rdnoise) * pixscale_img/pixscale_nat)**2)
 
-
     # -- perform rough background noise calculation
     if backsigma == None:
         backstats=iraf.imstatistics(image+'['+str(sciext[0])+']', fields='stddev', lower = -100, upper = 100, nclip=5, \
                                     lsigma=3.0, usigma=3.0, cache='yes', format='no',Stdout=1)
         backsigma=float(backstats[0])
-
 
     # -- remove old daofind files/run daofind
     file_query = os.access(outfile, os.R_OK)        
