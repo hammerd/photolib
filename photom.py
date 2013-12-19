@@ -225,9 +225,26 @@ def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise
 
 def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', backval=None, backsigma=None,rdnoise=None,\
                 apertures='1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,24,28,32,36,40,45,50,55,60,65,70', cbox=3.0, \
-                annulus=17.0, dannulus=3.0, calgorithm='centroid', salgorithm='median', fwhmpsf=2.5, epadu=1.0):
+                annulus=17.0, dannulus=3.0, calgorithm='centroid', salgorithm='constant', fwhmpsf=2.5, epadu=1.0):
 
-    '''THIS PROCEDURE RUNS DAOPHOT ON INPUT IMAGE'''
+    '''THIS PROCEDURE RUNS DAOPHOT ON INPUT IMAGE
+    
+       Note: salgorithm determines whether to we estimate our own background and/or std deviation.
+       
+       Case 1: salgorithm == constant (default)
+          *SubCases*
+          (a) For backval or backsigma == None: We will estimate background (via backmethod) and/or sigma
+               by masking single standard star and edges (expects only 1 xy location in coord file).
+          
+          --OR--
+          
+          (b) backval or backsigma == value: Inputs this value directly into daophot.
+          
+        Case 2: salgorithm == anything else (e.g., mode, mean, etc.)
+            Here, daophot computes sky and sigma even if backval or backsigma were input to run_daophot.
+            This is useful for general case of several sources in FOV that we wish to measure.
+            
+    '''
 
     # Parse input parameters
     if outfile == 'default': outfile = image + '.mag'
@@ -300,8 +317,8 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
         for namp in xrange(len(ccdamp)): rdnoise[namp] = prihdr['READNSE'+ccdamp[namp]]
     rdnoise_corr = np.sqrt(num_flts * (np.average(rdnoise) * pscale_img/pscale_nat)**2)
 
-    # -- measure the background and noise
-    if ((backval == None) | (backsigma == None)):
+    # -- measure the background and noise (case of single standard star observations)
+    if ((salgorithm == 'constant') & ((backval == None) | (backsigma == None))):
         # -- read in the x/y center of the source
         xc,yc = np.loadtxt(coordfile, unpack=True, usecols = (0,1))
 
@@ -361,7 +378,7 @@ def run_daophot(image, outfile='default', coordfile='NA', backmethod='mean', bac
     iraf.phot.unlearn()         # reset daophot parameters to default values
     iraf.phot(image=image+'['+str(sciext[0])+']', interactive='no', verify='no', coords=coordfile, output=outfile, \
               fwhmpsf=fwhmpsf, sigma=backsigma, readnoise=rdnoise_corr, itime=exptime, calgorithm=calgorithm, \
-              cbox=cbox, skyvalue=backval,apertures=apertures,zmag=zeropt,salgorithm='constant')
+              cbox=cbox, skyvalue=backval,apertures=apertures,zmag=zeropt,salgorithm=salgorithm)
               #annulus=annulus, dannulus=dannulus
 
 
