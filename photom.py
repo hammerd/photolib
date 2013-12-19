@@ -142,7 +142,7 @@ def make_counts_image(image, outfile='default'):
     return outfile
     
 
-def run_daofind(image, outfile='default', dthreshold=3.0, fwhmpsf=2.5, backsigma=None,rdnoise=None):
+def run_daofind(image, outfile='default', dthreshold=3.0, backsigma=None,rdnoise=None):
     '''RUN DAOFIND ON INPUT IMAGE'''
 
     # -- parse output filename
@@ -162,16 +162,19 @@ def run_daofind(image, outfile='default', dthreshold=3.0, fwhmpsf=2.5, backsigma
     if instrum == 'WFC3':
         if detector == 'UVIS':
             pscale_nat = 0.03962
+            fwhmpsf = 0.074/pscale_nat
             if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
             elif SUBARRAY == False: nchips = 2.0
             else: raise Exception('Image type is not defined.')
         elif detector == 'IR':
             pscale_nat = 0.12825
             nchips = 1.0
+            fwhmpsf = 0.15/pscale_nat
         else: raise Exception('Detector '+detector+' not covered in our case list.')
     elif instrum == 'ACS':
         if detector == 'WFC':
             pscale_nat = 0.049
+            fwhmpsf = 0.1/pscale_nat
             if ((SUBARRAY == True) & (len(ccdamp) == 1)): nchips = 1.0
             elif SUBARRAY == False: nchips = 2.0
             else: raise Exception('Image type is not defined.')
